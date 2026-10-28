@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A privacy-first BIP39 mnemonic generator and validator that runs locally in your browser.">
+<title>PhraseGuard — BIP39 Tool</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#131b2e;--panel2:#0f1728;--line:#27344d;--text:#edf2ff;--muted:#9caecc;--accent:#7c9cff;--good:#4bd4a0;--bad:#ff7d8a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#18294a 0,#0b1020 50%);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:980px;margin:auto;padding:32px 18px 60px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#8ba7ff,#7ee7cb);display:grid;place-items:center;color:#081122;font-weight:900;font-size:22px}.brand h1{font-size:21px;margin:0}.brand p{margin:0;color:var(--muted);font-size:13px}
+.hero h2{font-size:clamp(28px,5vw,42px);line-height:1.1;margin:0 0 12px;letter-spacing:-.03em}.hero p{color:var(--muted);max-width:720px;margin:0 0 26px}
+.badge{display:inline-flex;border:1px solid #2c4660;color:#bcefe1;background:#122b31;padding:5px 10px;border-radius:999px;font-size:12px;margin-bottom:14px}
+.tabs{display:flex;gap:8px;margin:24px 0 0;flex-wrap:wrap}.tab{background:transparent;border:1px solid var(--line);color:var(--muted);padding:11px 15px;border-radius:12px 12px 0 0;cursor:pointer;font:inherit}.tab.active{background:var(--panel);color:var(--text);border-bottom-color:var(--panel)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:0 16px 16px 16px;padding:22px;box-shadow:0 20px 60px #0002}.section{display:none}.section.active{display:block}.label{display:block;font-weight:650;margin:0 0 8px}textarea{width:100%;min-height:120px;resize:vertical;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:14px;font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;outline:none}textarea:focus{border-color:var(--accent)}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:11px;padding:11px 16px;font:inherit;font-weight:700;cursor:pointer;background:var(--accent);color:#081122}.btn.secondary{background:#202d45;color:var(--text);border:1px solid #33435f}.btn:disabled{opacity:.5;cursor:not-allowed}.hint{color:var(--muted);font-size:13px;margin-top:10px}.result{margin-top:16px;border:1px solid var(--line);background:var(--panel2);padding:14px;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere}.result.good{border-color:#287c65}.result.bad{border-color:#8c3f50}.words{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}.word{background:var(--panel2);border:1px solid var(--line);padding:10px;border-radius:10px;display:flex;gap:9px;align-items:center;min-width:0}.num{color:var(--muted);font-size:12px;width:18px}.word span:last-child{overflow-wrap:anywhere}.notice{margin-top:22px;padding:14px 16px;border-radius:12px;background:#2b2518;border:1px solid #62502b;color:#ffe6aa;font-size:13px}.foot{color:var(--muted);font-size:12px;margin-top:22px}.checkline{display:flex;gap:9px;align-items:flex-start;color:var(--muted);font-size:13px;margin-top:12px}.checkline input{margin-top:4px}
+@media(max-width:560px){.wrap{padding:22px 12px 40px}.card{padding:15px}.words{grid-template-columns:repeat(2,minmax(0,1fr))}.hero p{font-size:14px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="brand"><div class="logo">P</div><div><h1>PhraseGuard</h1><p>BIP39 · Local-only wallet phrase utility</p></div></header>
+<section class="hero">
+<div class="badge">🔒 Runs in your browser</div>
+<h2>Generate and validate<br>12-word recovery phrases.</h2>
+<p>Create a fresh BIP39 mnemonic using your device’s cryptographic random number generator, or validate a phrase you already own. PhraseGuard does not send phrase text to a server.</p>
+</section>
+<nav class="tabs" aria-label="Tools">
+<button class="tab active" data-tab="generate">Generate</button>
+<button class="tab" data-tab="validate">Validate</button>
+<button class="tab" data-tab="about">How it works</button>
+</nav>
+<div class="card">
+<section class="section active" id="generate">
+<h3>Generate a new 12-word phrase</h3>
+<p class="hint">This tool creates a new BIP39 128-bit entropy phrase and verifies its checksum locally. Use only on a device you trust.</p>
+<div class="row"><button class="btn" id="generateBtn">Generate phrase</button><button class="btn secondary" id="copyBtn" disabled>Copy phrase</button></div>
+<div id="generatedWords" class="words" aria-live="polite"></div>
+<div id="genResult" class="result" hidden></div>
+<div class="notice"><strong>Security note:</strong> For a wallet holding funds, prefer the recovery process built into your hardware or reputable wallet. Never share your recovery phrase with anyone or enter it into a website you do not fully trust.</div>
+</section>
+<section class="section" id="validate">
+<h3>Validate a 12-word BIP39 phrase</h3>
+<label class="label" for="phrase">Enter your phrase</label>
+<textarea id="phrase" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="word1 word2 word3 … (12 words)"></textarea>
+<label class="checkline"><input type="checkbox" id="ack"><span>I understand that recovery phrases can control access to funds. I will only check a phrase I own or am authorized to test.</span></label>
+<div class="row"><button class="btn" id="validateBtn">Validate phrase</button><button class="btn secondary" id="clearBtn">Clear</button></div>
+<div id="valResult" class="result" hidden aria-live="polite"></div>
+<p class="hint">Validation checks the English BIP39 word list and checksum. It does not check whether a wallet exists, is active, or has funds.</p>
+</section>
+<section class="section" id="about">
+<h3>What this tool checks</h3>
+<ul>
+<li><strong>Generator:</strong> Uses the browser’s cryptographic random number generator to create 128 bits of entropy, then builds the BIP39 checksum and 12-word phrase.</li>
+<li><strong>Validator:</strong> Confirms exactly 12 words, verifies each word is in the BIP39 English list, and checks the checksum.</li>
+<li><strong>Privacy:</strong> All phrase handling happens in your browser. This static demo has no server endpoint or analytics code.</li>
+</ul>
+<div class="notice">A valid checksum only means the phrase is structurally valid. It does not prove ownership or identify a real wallet. Do not use this page to test random phrases against other people’s wallets.</div>
+<p class="hint">This is a client-side demo. For production use, review the source, deploy over HTTPS, and audit dependencies and hosting. This page loads the BIP39 word list from a public GitHub raw URL when first used; for fully offline operation, bundle the list locally.</p>
+</section>
+</div>
+<p class="foot">PhraseGuard is an independent utility and is not affiliated with OneKey. BIP39 is a mnemonic standard; compatibility depends on the wallet’s implementation.</p>
+</main>
+<script>
+const WORDLIST_URL = 'https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/english.txt';
+let wordListPromise;
+function getWordList(){
+  if(!wordListPromise) wordListPromise = fetch(WORDLIST_URL, {cache:'force-cache'})
+    .then(r=>{if(!r.ok)throw new Error('Could not load the BIP39 word list. Check your connection and try again.');return r.text()})
+    .then(t=>{const words=t.trim().split(/\r?\n/);if(words.length!==2048)throw new Error('The BIP39 word list did not load correctly.');return words;});
+  return wordListPromise;
+}
+function bytesToBits(bytes){return Array.from(bytes,b=>b.toString(2).padStart(8,'0')).join('')}
+function bitsToBytes(bits){const out=new Uint8Array(bits.length/8);for(let i=0;i<out.length;i++)out[i]=parseInt(bits.slice(i*8,i*8+8),2);return out}
+async function sha256(data){return new Uint8Array(await crypto.subtle.digest('SHA-256',data))}
+async function generateMnemonic(){
+  if(!crypto?.getRandomValues || !crypto?.subtle) throw new Error('Secure browser cryptography is unavailable. Open this page on HTTPS or localhost.');
+  const entropy=crypto.getRandomValues(new Uint8Array(16));
+  const entropyBits=bytesToBits(entropy);
+  const hash=await sha256(entropy);
+  const checksumBits=bytesToBits(hash).slice(0,4);
+  const all=entropyBits+checksumBits;
+  const words=await getWordList();
+  const result=[];
+  for(let i=0;i<all.length;i+=11) result.push(words[parseInt(all.slice(i,i+11),2)]);
+  return result;
+}
+async function validateMnemonic(phrase){
+  if(!crypto?.subtle) throw new Error('Secure browser cryptography is unavailable. Open this page on HTTPS or localhost.');
+  const words=(phrase.trim().toLowerCase().match(/\S+/g)||[]);
+  if(words.length!==12) return {valid:false,message:`Found ${words.length} words. A standard BIP39 phrase must contain exactly 12 words.`};
+  const list=await getWordList();
+  const indexes=words.map(w=>list.indexOf(w));
+  const bad=words.filter((w,i)=>indexes[i]===-1);
+  if(bad.length) return {valid:false,message:'These words are not in the BIP39 English list: '+[...new Set(bad)].join(', ')};
+  const bits=indexes.map(i=>i.toString(2).padStart(11,'0')).join('');
+  const entropyBits=bits.slice(0,128), checksumBits=bits.slice(128);
+  const hash=await sha256(bitsToBytes(entropyBits));
+  const expected=bytesToBits(hash).slice(0,4);
+  if(checksumBits!==expected) return {valid:false,message:'All words are in the BIP39 list, but the checksum is invalid.'};
+  return {valid:true,message:'Valid BIP39 12-word English phrase. This does not indicate whether it belongs to an existing wallet or contains funds.'};
+}
+function showResult(el,msg,good){el.hidden=false;el.className='result '+(good?'good':'bad');el.textContent=msg}
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b===btn));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===btn.dataset.tab));
+}));
+document.getElementById('generateBtn').addEventListener('click',async()=>{
+  const btn=document.getElementById('generateBtn'), area=document.getElementById('generatedWords'), res=document.getElementById('genResult');
+  btn.disabled=true; area.innerHTML='';res.hidden=true;
+  try{
+    const words=await generateMnemonic(); area.innerHTML='';
+    words.forEach((w,i)=>{const div=document.createElement('div');div.className='word';const n=document.createElement('span');n.className='num';n.textContent=String(i+1).padStart(2,'0');const word=document.createElement('span');word.textContent=w;div.append(n,word);area.append(div)});
+    window.currentPhrase=words.join(' ');document.getElementById('copyBtn').disabled=false;
+    showResult(res,'Phrase generated and checksum verified in this browser. Store it securely offline; do not share it.',true);
+  }catch(e){showResult(res,e.message||'Unable to generate phrase.',false)}
+  finally{btn.disabled=false}
+});
+document.getElementById('copyBtn').addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText(window.currentPhrase||'');const b=document.getElementById('copyBtn');b.textContent='Copied';setTimeout(()=>b.textContent='Copy phrase',1200)}
+  catch(e){showResult(document.getElementById('genResult'),'Clipboard access failed. Select and copy the words manually.',false)}
+});
+document.getElementById('validateBtn').addEventListener('click',async()=>{
+  const resultEl=document.getElementById('valResult');
+  if(!document.getElementById('ack').checked){showResult(resultEl,'Please confirm that you own this phrase or are authorized to test it.',false);return}
+  const btn=document.getElementById('validateBtn');btn.disabled=true;
+  try{const result=await validateMnemonic(document.getElementById('phrase').value);showResult(resultEl,result.message,result.valid)}
+  catch(e){showResult(resultEl,e.message||'Validation failed.',false)}
+  finally{btn.disabled=false}
+});
+document.getElementById('clearBtn').addEventListener('click',()=>{document.getElementById('phrase').value='';document.getElementById('valResult').hidden=true;document.getElementById('ack').checked=false});
+</script>
+</body>
+</html>
